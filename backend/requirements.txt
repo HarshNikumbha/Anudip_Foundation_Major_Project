@@ -1,0 +1,6 @@
+flask
+pandas
+scikit-learn
+flask-cors
+matplotlib
+numpy==1.26.4

@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="AI-powered Student Performance Analytics System — Predict pass/fail, identify weak students, track subject performance and attendance correlation.">
+  <title>EduAnalytics | Student Performance System</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <i class="fas fa-graduation-cap"></i>
+      <span>EduAnalytics</span>
+    </div>
+    <nav class="sidebar-nav">
+      <button class="nav-item active" data-tab="predict" id="navPredict">
+        <i class="fas fa-brain"></i>
+        <span>Predict</span>
+      </button>
+      <button class="nav-item" data-tab="analytics" id="navAnalytics">
+        <i class="fas fa-chart-bar"></i>
+        <span>Class View</span>
+      </button>
+      <button class="nav-item" data-tab="correlation" id="navCorrelation">
+        <i class="fas fa-diagram-project"></i>
+        <span>Correlation</span>
+      </button>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="ml-badge">
+        <i class="fas fa-microchip"></i>
+        <span>Decision Tree ML</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+
+    <!-- ======================== TAB 1: PREDICT ======================== -->
+    <section class="tab-panel active" id="tabPredict">
+      <div class="page-header">
+        <div>
+          <h1><i class="fas fa-brain"></i> Student Predictor</h1>
+          <p class="page-subtitle">Enter student metrics to predict academic outcome and get improvement tips</p>
+        </div>
+        <div class="accuracy-pill" id="accuracyPill">
+          <i class="fas fa-chart-simple"></i> Model Ready
+        </div>
+      </div>
+
+      <div class="predict-grid">
+        <!-- Input Card -->
+        <div class="card">
+          <div class="card-header">
+            <i class="fas fa-pen-ruler"></i>
+            <h2>Student Metrics</h2>
+          </div>
+          <div class="card-body">
+            <div class="input-group">
+              <label><i class="fas fa-calendar-check"></i> Attendance (%)</label>
+              <input type="number" id="attendance" class="input-field" placeholder="e.g., 85" min="0" max="100" value="78">
+            </div>
+            <div class="input-group">
+              <label><i class="fas fa-clock"></i> Study Hours (per day)</label>
+              <input type="number" id="study" class="input-field" placeholder="e.g., 3" min="0" value="3">
+            </div>
+            <div class="input-group">
+              <label><i class="fas fa-file-alt"></i> Internal Marks (0–100)</label>
+              <input type="number" id="internal" class="input-field" placeholder="e.g., 72" min="0" max="100" value="68">
+            </div>
+            <div class="input-group">
+              <label><i class="fas fa-tasks"></i> Assignment Score (0–100)</label>
+              <input type="number" id="assignment" class="input-field" placeholder="e.g., 80" min="0" max="100" value="74">
+            </div>
+            <div class="input-group">
+              <label><i class="fas fa-star"></i> Final Marks (0–100)</label>
+              <input type="number" id="final" class="input-field" placeholder="e.g., 77" min="0" max="100" value="77">
+            </div>
+            <button id="predictBtn" class="predict-btn">
+              <i class="fas fa-chart-line"></i>
+              <span>Analyze Performance</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Result Card -->
+        <div class="card">
+          <div class="card-header">
+            <i class="fas fa-chart-simple"></i>
+            <h2>Prediction Result</h2>
+          </div>
+          <div class="card-body">
+            <div class="result-area" id="resultArea">
+              <div id="predictionDisplay">
+                <div class="prediction-badge">
+                  <span class="awaiting-text"><i class="fas fa-chart-line"></i> Fill form &amp; click Analyze</span>
+                </div>
+              </div>
+              <div id="accuracyDisplay" class="accuracy-info">
+                <i class="fas fa-microchip"></i> Enter metrics → get AI verdict
+              </div>
+            </div>
+            <div class="chart-wrapper">
+              <canvas id="performanceChart" width="400" height="260"></canvas>
+            </div>
+            <div class="footer-note">
+              <span><i class="fas fa-chart-column"></i> Visual metrics</span>
+              <span><i class="fas fa-microchip"></i> Real-time AI</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Suggestions Section -->
+      <div class="card suggestions-card" id="suggestionsCard" style="display:none;">
+        <div class="card-header">
+          <i class="fas fa-lightbulb"></i>
+          <h2>Improvement Roadmap</h2>
+        </div>
+        <div class="card-body">
+          <div id="suggestionsList" class="suggestions-grid"></div>
+        </div>
+      </div>
+
+      <!-- Feature Importance -->
+      <div class="card" id="importanceCard" style="display:none;">
+        <div class="card-header">
+          <i class="fas fa-ranking-star"></i>
+          <h2>What Matters Most — Feature Importance</h2>
+        </div>
+        <div class="card-body">
+          <div class="chart-wrapper" style="min-height:200px;">
+            <canvas id="importanceChart" width="400" height="180"></canvas>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================== TAB 2: CLASS ANALYTICS ======================== -->
+    <section class="tab-panel" id="tabAnalytics">
+      <div class="page-header">
+        <div>
+          <h1><i class="fas fa-chart-bar"></i> Class Analytics</h1>
+          <p class="page-subtitle">Class-wide performance — weak students, toppers, and subject analysis</p>
+        </div>
+        <button class="refresh-btn" id="refreshAnalytics">
+          <i class="fas fa-rotate-right"></i> Refresh
+        </button>
+      </div>
+
+      <!-- Stats Row -->
+      <div class="stats-row" id="statsRow">
+        <div class="stat-card">
+          <div class="stat-icon blue"><i class="fas fa-users"></i></div>
+          <div class="stat-info">
+            <span class="stat-value" id="statTotal">—</span>
+            <span class="stat-label">Total Students</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon green"><i class="fas fa-check-circle"></i></div>
+          <div class="stat-info">
+            <span class="stat-value" id="statPass">—</span>
+            <span class="stat-label">Passed</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon red"><i class="fas fa-times-circle"></i></div>
+          <div class="stat-info">
+            <span class="stat-value" id="statFail">—</span>
+            <span class="stat-label">Failed</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon purple"><i class="fas fa-percent"></i></div>
+          <div class="stat-info">
+            <span class="stat-value" id="statRate">—</span>
+            <span class="stat-label">Pass Rate</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon orange"><i class="fas fa-chart-line"></i></div>
+          <div class="stat-info">
+            <span class="stat-value" id="statAvgFinal">—</span>
+            <span class="stat-label">Avg Final Marks</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="analytics-grid">
+        <!-- Subject Chart -->
+        <div class="card">
+          <div class="card-header">
+            <i class="fas fa-book-open"></i>
+            <h2>Subject-wise Class Average</h2>
+          </div>
+          <div class="card-body">
+            <div class="chart-wrapper" style="min-height:260px;">
+              <canvas id="subjectChart" width="400" height="260"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Top Performers -->
+        <div class="card">
+          <div class="card-header">
+            <i class="fas fa-trophy"></i>
+            <h2>Top Performers</h2>
+          </div>
+          <div class="card-body">
+            <div id="toppersList" class="topper-list"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Weak Students Table -->
+      <div class="card">
+        <div class="card-header">
+          <i class="fas fa-triangle-exclamation"></i>
+          <h2>Students Needing Attention</h2>
+          <span class="table-badge" id="weakCount">Loading...</span>
+        </div>
+        <div class="card-body">
+          <div class="table-wrapper">
+            <table class="data-table" id="weakTable">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Name</th>
+                  <th>Attendance</th>
+                  <th>Final Marks</th>
+                  <th>Result</th>
+                  <th>Issues</th>
+                </tr>
+              </thead>
+              <tbody id="weakTableBody">
+                <tr><td colspan="6" class="loading-row"><i class="fas fa-spinner fa-spin"></i> Loading...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================== TAB 3: CORRELATION ======================== -->
+    <section class="tab-panel" id="tabCorrelation">
+      <div class="page-header">
+        <div>
+          <h1><i class="fas fa-diagram-project"></i> Attendance vs Performance</h1>
+          <p class="page-subtitle">Scatter analysis of how attendance correlates with final exam scores across all 100 students</p>
+        </div>
+        <button class="refresh-btn" id="refreshCorr">
+          <i class="fas fa-rotate-right"></i> Refresh
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <i class="fas fa-scatter-chart"></i>
+          <h2>Attendance (%) vs Final Marks — All Students</h2>
+        </div>
+        <div class="card-body">
+          <div class="chart-wrapper" style="min-height:420px;">
+            <canvas id="correlationChart" width="800" height="420"></canvas>
+          </div>
+          <div class="corr-legend">
+            <span class="legend-dot pass-dot"></span> Pass
+            <span class="legend-dot fail-dot"></span> Fail
+          </div>
+        </div>
+      </div>
+
+      <!-- Insight Cards -->
+      <div class="insight-row">
+        <div class="insight-card">
+          <i class="fas fa-arrow-trend-up insight-icon blue"></i>
+          <div>
+            <div class="insight-title">Strong Correlation</div>
+            <div class="insight-text">Students with ≥75% attendance are significantly more likely to pass.</div>
+          </div>
+        </div>
+        <div class="insight-card">
+          <i class="fas fa-triangle-exclamation insight-icon orange"></i>
+          <div>
+            <div class="insight-title">Attendance Threshold</div>
+            <div class="insight-text">Most failures occur below 65% attendance — a critical early warning signal.</div>
+          </div>
+        </div>
+        <div class="insight-card">
+          <i class="fas fa-lightbulb insight-icon green"></i>
+          <div>
+            <div class="insight-title">EdTech Insight</div>
+            <div class="insight-text">Automated attendance alerts can prevent failures before exams begin.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
