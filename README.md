@@ -108,4 +108,3 @@ cd backend
 python -c "from model import train_model; train_model()"
 ```
 
-If you'd like, I can further tailor this README (add badges, screenshots, or detailed API examples).
