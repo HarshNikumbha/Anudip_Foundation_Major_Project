@@ -1,0 +1,54 @@
+-- DAX Measures for EduAnalytics (copy into Power BI measure editor)
+
+PassCount = CALCULATE(COUNTROWS('Data'), FILTER('Data', LOWER('Data'[Result]) = "pass"))
+FailCount = CALCULATE(COUNTROWS('Data'), FILTER('Data', LOWER('Data'[Result]) = "fail"))
+
+PassRate = IF(COUNTROWS('Data') = 0, 0, DIVIDE([PassCount], COUNTROWS('Data'), 0))
+PassRatePercent = FORMAT([PassRate], "0.0%")
+
+AvgFinal = AVERAGE('Data'[Final_Marks])
+AvgAttendance = AVERAGE('Data'[Attendance])
+
+Top5Toppers =
+TOPN(
+    5,
+    ALL('Data'),
+    'Data'[Final_Marks],
+    DESC
+)
+
+-- Example: Flag weak students
+IsWeak = IF(OR('Data'[Attendance] < 65, 'Data'[Final_Marks] < 40), 1, 0)
+
+-- Use these measures in KPI cards, charts and tables
+
+/* Suggested additional measures */
+
+Total Students = COUNTROWS('Data')
+
+Pass Count = CALCULATE(COUNTROWS('Data'), FILTER('Data', LOWER('Data'[Result]) = "pass"))
+
+Fail Count = [Total Students] - [Pass Count]
+
+Pass Rate = DIVIDE([Pass Count], [Total Students], 0)
+
+Pass Rate Percent = FORMAT([Pass Rate], "0.0%")
+
+Average Final Marks = AVERAGE('Data'[Final_Marks])
+
+Average Attendance = AVERAGE('Data'[Attendance])
+
+Weak Students Count = CALCULATE(COUNTROWS('Data'), FILTER('Data', 'Data'[Attendance] < 65 || 'Data'[Final_Marks] < 40))
+
+Top 5 Toppers (Names) =
+VAR TopN = TOPN(5, ALL('Data'), 'Data'[Final_Marks], DESC)
+RETURN CONCATENATEX(TopN, 'Data'[Name], ", ", 'Data'[Final_Marks], DESC)
+
+/* Pearson-like correlation (attendance vs final) - use in a card to show directional correlation */
+Attendance-Final Correlation =
+VAR AAvg = AVERAGE('Data'[Attendance])
+VAR FAvg = AVERAGE('Data'[Final_Marks])
+VAR Cov = SUMX(ALL('Data'), ( 'Data'[Attendance] - AAvg ) * ( 'Data'[Final_Marks] - FAvg ))
+VAR SDa = SQRT( SUMX(ALL('Data'), POWER( 'Data'[Attendance] - AAvg, 2 ) ) )
+VAR SDf = SQRT( SUMX(ALL('Data'), POWER( 'Data'[Final_Marks] - FAvg, 2 ) ) )
+RETURN DIVIDE( Cov, SDa * SDf, 0 )
